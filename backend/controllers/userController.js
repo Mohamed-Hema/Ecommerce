@@ -62,5 +62,61 @@ const loginUser = asyncHandler(async (req, res) => {
 
   res.status(401).json({ message: "Invalid email or password" });
 });
+const logout = asyncHandler(async (req, res) => {
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    expires: new Date(0),
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+});
 
-export { createUser, loginUser };
+const getAllUsers = asyncHandler(async (req, res) => {
+  const users = await User.find({});
+  res.json(users);
+});
+
+const getCurrentUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (user) {
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+    });
+  } else {
+    res.status(404);
+    throw new Error("User not found!");
+  }
+});
+
+const updateCurrentUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    user.username = req.body.username || user.username;
+    user.email = req.body.email || user.email;
+
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+    const updatedUser = await User.save();
+    res.json({
+      _id: updatedUser._id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      isAdmin: updatedUser.isAdmin,
+    });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
+});
+
+export {
+  createUser,
+  loginUser,
+  logout,
+  getAllUsers,
+  getCurrentUserProfile,
+  updateCurrentUserProfile,
+};
